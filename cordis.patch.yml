@@ -1,0 +1,4 @@
+- insert:
+    - id: dsh-tool-model-catalog
+      name: '@dsh-external/dsh-tool-model-catalog'
+      config: {}
