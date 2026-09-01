@@ -32,10 +32,12 @@ Relevant verification calls the real tool in the composed profile, observes an a
 - Provider failure must not discard successful providers from an all-provider response; the affected provider remains identifiable with its failure.
 - Credentials, provider configuration and mutable model policy never enter the persisted catalog payload.
 
-## Conditional decisions
+## Target-dependent commitments
 
-- If a target runtime cannot enumerate models, preserve `list_models` as advisory discovery using the narrowest available provider facts and expose the limitation; do not invent catalog membership.
-- Exact field names, labels and ordering may follow the target presentation until the user reports one as behavior that must remain.
+- When the target LLM runtime exposes provider model catalogs, `list_models` includes them and retains their advisory meaning.
+- When the target cannot enumerate model membership, `list_models` exposes the narrowest provider discovery the runtime actually supplies and identifies the missing model catalog. It does not invent membership or recreate another framework's catalog concept.
+
+Exact field names, labels and ordering are not yet locked behavior and may follow the target presentation until the user says one must remain.
 
 ## Non-goals
 
