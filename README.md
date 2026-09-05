@@ -2,12 +2,6 @@
 
 Expose the live provider and model catalog to the model
 
-## 构建与安装
+## 安装与维护
 
-```bash
-DSH_CHECKOUT=<checkout> bash scripts/build.sh
-cd <checkout>
-DSH_HOME=<home> pnpm dsh plugin --profile web add /root/dsh-tool-model-catalog
-```
-
-插件自带 Bundle 层，安装后重启对应 profile 即可；不依赖 `super-injector`。
+构建、profile 安装、升级适配、卸载、数据保留和验证入口见 [STATE 安装维护地图](.intent/state/STATE.md#installation-and-maintenance-map)。STATE 区分用户要求保留的效果与当前实现；历史安装记录不代表当前部署已验证。
