@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
+import { createRequire } from 'node:module'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const packageDir = path.join(root, 'packages', 'dsh-tool-model-catalog')
@@ -26,14 +27,34 @@ function inspect() {
   const specifier = current.dependencies?.[manifest.name]
   const bundles = current.dsh?.profile?.bundles ?? []
   const lockFile = path.join(directory, 'pnpm-lock.yaml')
-  const lock = fs.existsSync(lockFile) ? fs.readFileSync(lockFile, 'utf8') : ''
+  let lockEntry
+  let lockError
+  if (fs.existsSync(lockFile)) {
+    try {
+      const { load } = createRequire(path.join(checkout, 'apps/cli/package.json'))('js-yaml')
+      lockEntry = load(fs.readFileSync(lockFile, 'utf8'))?.importers?.['.']?.dependencies?.[manifest.name]
+    } catch (error) { lockError = error.message }
+  }
+  let lockedResolution
+  if (typeof lockEntry?.version === 'string' && lockEntry.version.startsWith('link:')) {
+    try { lockedResolution = fs.realpathSync(path.resolve(directory, lockEntry.version.slice(5))) } catch (error) { if (error.code !== 'ENOENT') throw error }
+  }
   let resolved
   try { resolved = fs.realpathSync(path.join(directory, 'node_modules', manifest.name)) } catch (error) { if (error.code !== 'ENOENT') throw error }
+  const bundleCount = bundles.filter(name => name === manifest.name).length
+  const lockMatches = typeof specifier === 'string' && lockEntry?.specifier === specifier
+    && lockedResolution !== undefined && lockedResolution === resolved
+  const status = specifier === undefined && lockEntry === undefined && lockError === undefined
+    && resolved === undefined && bundleCount === 0 ? 'absent'
+    : lockMatches && resolved === fs.realpathSync(packageDir) && bundleCount === 1 ? 'installed'
+      : 'inconsistent'
   const result = {
+    status,
     package: manifest.name, expected: packageDir, profile: directory,
     specifier: specifier ?? null, resolved: resolved ?? null,
-    bundleCount: bundles.filter(name => name === manifest.name).length,
-    lockMatches: typeof specifier === 'string' && lock.includes(manifest.name) && lock.includes(specifier),
+    bundleCount,
+    lockSpecifier: lockEntry?.specifier ?? null, lockVersion: lockEntry?.version ?? null,
+    lockMatches, lockError: lockError ?? null,
   }
   console.log(JSON.stringify(result, null, 2))
   return result
@@ -52,9 +73,9 @@ if (mutate) {
 }
 const state = inspect()
 if (mutate && operation === 'setup') {
-  if (!state.specifier || state.resolved !== fs.realpathSync(packageDir) || state.bundleCount !== 1 || !state.lockMatches) {
+  if (state.status !== 'installed') {
     throw new Error('Profile dependency, lockfile, resolution and Bundle do not agree with the selected package')
   }
-} else if (mutate && (state.specifier !== null || state.bundleCount !== 0 || state.resolved !== null)) {
-  throw new Error('Removed plugin still has a profile dependency, resolution or Bundle; inspect remaining consumers')
+} else if (mutate && state.status !== 'absent') {
+  throw new Error('Removed plugin has inconsistent dependency, lockfile, resolution or Bundle state; inspect remaining consumers')
 }
