@@ -6,3 +6,5 @@ This host contains an embedded intent package at `.intent/`.
 - Use the installation and maintenance map in `.intent/state/STATE.md` to locate current commands, owned sources, data and verification. Read selected logs for the relevant decision; retained locks are optional recovery evidence.
 - Files outside `.intent/` are implementation evidence and may include user-owned content explicitly preserved by STATE.
 - No realization lock is selected. Do not describe the current source or deployment as accepted until the user confirms it.
+
+The root is a private development workspace. `packages/dsh-tool-model-catalog/` owns the installable package, source, tests, resources and build output; root scripts own build/typecheck/setup/inspect/remove. Use README and STATE for executable commands. Preserve npm identities and runtime data when changing package paths.

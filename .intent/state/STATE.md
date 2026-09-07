@@ -24,38 +24,37 @@ The recorded target is Harness alpha.2 at the revision in `STATE.json.resources`
 
 ### Sources, ownership and data
 
-`src/index.ts` owns `list_models`, live refresh and snapshot fallback. The current snapshot path is `~/.dsh/storages/dsh-tool-model-catalog.json`, resolved from the OS home directory; `DSH_HOME` does not relocate it and no storage-path Config exists. A private profile therefore does not isolate this file. The package has no Host patch or browser contribution.
+`packages/dsh-tool-model-catalog/src/index.ts` owns `list_models`, live refresh and snapshot fallback. The current snapshot path is `~/.dsh/storages/dsh-tool-model-catalog.json`, resolved from the OS home directory; `DSH_HOME` does not relocate it and no storage-path Config exists. A private profile therefore does not isolate this file. The package has no Host patch or browser contribution.
 
-The [manifest](../../package.json), [Bundle patch](../../cordis.patch.yml) and [build script](../../scripts/build.sh) own the current executable paths. Read the selected Harness checkout’s `apps/cli/reference/README.md` for profile composition and `docs/development.md` for its build prerequisites. Build against the same checkout that will run the profile, with its dependencies and required peer artifacts ready. Build scripts create local dependency links and `lib/`; these are replaceable outputs, unlike runtime data.
+The [manifest](../../packages/dsh-tool-model-catalog/package.json), [Bundle patch](../../packages/dsh-tool-model-catalog/cordis.patch.yml) and [build script](../../scripts/build.mjs) own the current executable paths. Read the selected Harness checkout’s `apps/cli/reference/README.md` for profile composition and `docs/development.md` for its build prerequisites. Build against the same checkout that will run the profile, with its dependencies and required peer artifacts ready. Build scripts create local dependency links and `lib/`; these are replaceable outputs, unlike runtime data.
 
 ### Build, compose and remove
 
-Set absolute paths and the intended profile; run the build from this plugin checkout. The commands describe installation operations, not actions performed by this document update.
+The repository root is a private development workspace; `packages/dsh-tool-model-catalog/` is the sole installable package. The npm name, package version, Bundle identity and public exports remain independent of other repositories. Source, build configs, tests, resources and output belong to that package; `.intent/`, Agent guidance and operation scripts stay at the repository root. There is no runtime forwarding package at the root. Self-owned code uses MIT; Host patch excerpts retain their upstream license where present.
 
-```bash
-export DSH_CHECKOUT=/absolute/path/to/deepseek-harness
-export DSH_HOME=/absolute/path/to/dsh-home
-PROFILE=web
-PLUGIN=/absolute/path/to/dsh-tool-model-catalog
-cd "$PLUGIN"
-DSH_CHECKOUT="$DSH_CHECKOUT" bash scripts/build.sh
-cd "$DSH_CHECKOUT"
-pnpm dsh plugin --profile "$PROFILE" add "$PLUGIN"
-pnpm dsh plugin --profile "$PROFILE" why @dsh-external/dsh-tool-model-catalog
-pnpm dsh --profile "$PROFILE" --dump-config
+Run the following from this repository root, with absolute paths for the selected Harness checkout and Home and one explicit profile name:
+
+```sh
+export DSH_CHECKOUT=/absolute/harness
+export DSH_HOME=/absolute/home
+export DSH_PROFILE=web
+npm run build
+npm run setup
+npm run setup -- --install
+npm run inspect
+npm run remove
+npm run remove -- --remove
 ```
 
-For a requested removal, use the same environment and run from the Harness checkout:
+`setup` and `remove` default to checks; only `--install` and `--remove` write. `inspect` reads the profile manifest, lockfile and resolved package without initializing the profile or reconciling its Bundle list. Build requires prepared Host declarations and this workspace's installed development tools; prepare dependencies explicitly with `pnpm install --ignore-scripts`. Local TypeScript is pinned to 5.9.3 and tsdown, where used, to 0.22.14; commands invoke Node tools directly and do not install dependencies.
 
-```bash
-pnpm dsh plugin --profile "$PROFILE" remove @dsh-external/dsh-tool-model-catalog
-```
+Installation uses the built CLI at `$DSH_CHECKOUT/apps/cli/lib/bin.js` and the selected `DSH_HOME`/`DSH_PROFILE`, never an unrelated PATH CLI. It adds the absolute `packages/dsh-tool-model-catalog/` path through `dsh plugin`; removal uses the same transaction. The transaction owns dependency, pnpm lockfile, resolution and Bundle changes. After installation, `inspect` must name the selected package directory, one Bundle and a matching lock entry. After removal, dependency, resolution and Bundle must be absent; retained transitive consumers require investigation. No operation restarts a service.
 
-`dsh plugin` maintains the profile dependency, pnpm lockfile, installed resolution and `dsh.profile.bundles` together. After add/update/remove, inspect all four under `$DSH_HOME/profiles/$PROFILE` and the composed config: exactly one `dsh-tool-model-catalog` row when installed, none when removed. Later profile/home patches replace a row’s complete config, so preserve existing overrides. A running profile retains its startup Bundle set; activation needs an authorized restart, then a fresh-session check for duplicate tool owners, including residual `super-injector` entries. For first install or changed composition, validate a candidate with the target package set in a private Home before changing a managed profile.
+For an existing root-package installation, inspect the current profile and retain its overrides, runtime data and existing Host receipt. Build the candidate, then use `setup --install` to replace the old root `link:`/`file:` coordinate with the child package through the selected CLI. Do not hand-edit only the Bundle or manifest. Update consumer-owned build aliases, scripts and paths that read the old root `src/`, `lib/` or patch locations; stable npm imports remain unchanged. A prior build or historical receipt does not establish acceptance of the changed profile. Probe changed composition in a private Home with the target package set before an authorized managed activation.
 
 ### Upgrade and verification
 
-After a Harness upgrade, inspect the LLM provider/model listing APIs and adapter-update event, then adapt the live projection in `src/index.ts`. Preserve exact-provider filtering, capture time, live/cached distinction and advisory membership. Per-provider listing failure currently stays in that provider’s live result; whole-refresh or snapshot-write failure triggers cached fallback. If upstream supplies equivalent discovery, use one tool owner. A Host patch is conditional on a missing required native capability and must have attributable ownership and a removal path.
+After a Harness upgrade, inspect the LLM provider/model listing APIs and adapter-update event, then adapt the live projection in `packages/dsh-tool-model-catalog/src/index.ts`. Preserve exact-provider filtering, capture time, live/cached distinction and advisory membership. Per-provider listing failure currently stays in that provider’s live result; whole-refresh or snapshot-write failure triggers cached fallback. If upstream supplies equivalent discovery, use one tool owner. A Host patch is conditional on a missing required native capability and must have attributable ownership and a removal path.
 
 There is no package test script. Build checks API compatibility; use the real tool for all/exact/unknown-provider calls and controlled refresh failure with readable, missing and unreadable cache. Isolate or back up the actual home-based cache before failure probes, and verify one provider’s failure leaves successful providers visible. Do not infer fallback coverage from a provider-local failure.
 

@@ -1,34 +1,22 @@
 {
-  "name": "@dsh-external/dsh-tool-model-catalog",
+  "name": "dsh-tool-model-catalog-development",
   "version": "0.0.1",
-  "description": "Expose the live provider and model catalog to the model",
   "private": true,
   "type": "module",
-  "main": "./lib/index.js",
-  "types": "./lib/types/index.d.ts",
-  "files": [
-    ".intent",
-    "AGENTS.md",
-    "cordis.patch.yml",
-    "lib"
+  "license": "MIT",
+  "packageManager": "pnpm@10.17.1",
+  "workspaces": [
+    "packages/*"
   ],
-  "license": "BSD-3-Clause",
-  "peerDependencies": {
-    "@deepseek-ai/dsh-llm": ">=0.0.1-rc <2",
-    "@deepseek-ai/dsh-tools": ">=0.0.1-rc <2",
-    "@deepseek-ai/cordis": "^4.0.2"
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "node scripts/build.mjs --check",
+    "setup": "node scripts/profile.mjs setup",
+    "inspect": "node scripts/profile.mjs inspect",
+    "remove": "node scripts/profile.mjs remove"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "typescript": "^5.9.0"
-  },
-  "scripts": {
-    "build": "bash scripts/build.sh",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "dsh": {
-    "bundle": {
-      "patch": "./cordis.patch.yml"
-    }
+    "typescript": "5.9.3"
   }
 }
